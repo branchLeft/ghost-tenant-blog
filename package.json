@@ -1,0 +1,14 @@
+{
+  "name": "ghost-platform-tenant",
+  "private": true,
+  "main": "index.ts",
+  "dependencies": {
+    "@branchleft/ghost-platform-tenant": "0.4.0",
+    "@pulumi/gcp": "^9.32.1",
+    "@pulumi/pulumi": "^3.255.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26",
+    "typescript": "^5.9.0"
+  }
+}

@@ -1,0 +1,23 @@
+secretsprovider: gcpkms://projects/branchleft-prod/locations/europe-west1/keyRings/pulumi/cryptoKeys/pulumi-secrets
+encryptedkey: CiQAefexUsPIzrK1bHKPZoFM3T5V8i7VZ7qIxGtR28AgqdzR5/QSSQBxixxQlUsNOY296qmsztD1MQZ9z8MOw6zfkq1WcTSYX7PYG3kSBheh150KIxz1BLGJrlp8oxHaY2NZo7YTMPgYPjYfzJ3mrjo=
+config:
+  gcp:project: branchleft-prod
+  blog-infra:tenantName: blog
+  blog-infra:siteUrl: https://blog.branchleft.co.uk
+  blog-infra:imageDigestOrTag: sha256:cd90f86474c1d5266bb81e5511abbc5de36b8c8fa4d14adc971dc9e9a8eb7920
+  blog-infra:deployerServiceAccountEmail: blog-deployer@branchleft-prod.iam.gserviceaccount.com
+  blog-infra:platformDbInstanceConnectionName: branchleft-prod:europe-west1:ghost-platform-db
+  blog-infra:platformTenantImageRepositoryDockerPath: europe-west1-docker.pkg.dev/branchleft-prod/ghost-platform-tenant
+  blog-infra:platformMediaBucketUrl: gs://branchleft-prod-ghost-platform-media
+  blog-infra:mailHost: mx1.branchleft.co.uk
+  blog-infra:mailPort: '587'
+  blog-infra:mailUser: blog@branchleft.co.uk
+  blog-infra:mailFrom: 'branchLeft blog <blog@branchleft.co.uk>'
+  # mailSmtpPassword is not committed here. It is a live credential, and this
+  # is a public repo, so it is held as an Actions secret and encrypted into
+  # this stack's config by the deploy job at runtime, before any program run
+  # reads it -- see .github/workflows/infra-ci.yml.
+  blog-infra:bulkEmailBaseUrl: https://mx1.branchleft.co.uk:8443
+  blog-infra:bulkEmailDomain: blog.branchleft.co.uk
+  # bulkEmailApiKey is injected at deploy time too, for the same reason as
+  # mailSmtpPassword above.

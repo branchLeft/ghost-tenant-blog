@@ -1,0 +1,247 @@
+name: Infra CI
+
+# Type-checks this repo's Pulumi program on every PR, and applies its one
+# stack on every push to main.
+#
+# Mirrors branchLeft/ghost-platform's infra/platform-ci.yml; the same five
+# guardrails apply here:
+#
+#   1. The apply runs only on push to main. Pull requests get type-check
+#      only -- the WIF-federated deployer SA that can create/mutate/delete
+#      real infrastructure is never reachable from a PR run.
+#   2. Credentials are short-lived, exchanged via Workload Identity
+#      Federation and scoped by attributeCondition to this repository alone.
+#      No service-account key exists anywhere.
+#   3. The deployer identity, its federation and its roles are created by the
+#      platform's provisioning flow and live in that stack's state, not this
+#      one. This program cannot widen its own permissions because it does not
+#      declare them.
+#   4. A preflight parses the real `pulumi preview` plan for this exact run
+#      and aborts before `pulumi up` if it would destroy protected
+#      infrastructure (scripts/assert-no-tenant-deletes.py).
+#   5. The deploy job declares an `environment`. It is a deployment-history
+#      label here and does not gate -- see the `environment:` key below.
+#
+# `npm ci` authenticates with the run's own GITHUB_TOKEN.
+# @branchleft/ghost-platform-tenant is a public package, and any authenticated
+# token can read one, so a tenant repo holds no long-lived credential of its
+# own. GitHub Packages' npm registry still rejects anonymous requests, which is
+# why a token is needed at all.
+#
+# `PULUMI_STATE_BUCKET`: this tenant has its own state bucket, written as a
+# repo variable by the provisioning flow. Per-tenant rather than shared so a
+# plain bucket-scoped `roles/storage.objectAdmin` is already correctly
+# confined and no tenant can enumerate another's stacks -- an object-name
+# prefix condition on a shared bucket cannot do that job, because
+# `storage.objects.list` is evaluated against the bucket and the filestate
+# backend resolves a stack by listing.
+#
+# Both checkout steps set `persist-credentials: false` regardless: without
+# it, the token GitHub issues for checkout would sit on disk for every later
+# step in the job -- including `npm ci`'s transitive postinstall scripts --
+# to read.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  typecheck:
+    name: Type check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+          registry-url: https://npm.pkg.github.com
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      # Skipped in the template repo itself, where an unsubstituted
+      # placeholder is the correct, permanent state of `main` -- this step
+      # exists for repos generated *from* the template. `!= true` (not
+      # `== false`) so an absent/null `is_template` -- which live runs
+      # against this repo confirm does not happen for push or pull_request,
+      # but a future GitHub payload change is not this repo's to guarantee
+      # -- fails open into running the check, not skipping it.
+      - name: Verify template placeholders are substituted
+        if: github.event.repository.is_template != true
+        run: python3 scripts/assert-placeholders-substituted.py
+
+      # Cheap, credential-free, and catches the way the deploy job's safety
+      # gates die quietly. Runs here as well as in `deploy` so the PR that
+      # introduces the drift fails, rather than the merge that ships it.
+      # Unlike the placeholder check above, this is meaningful in the
+      # template repo too -- it doesn't depend on placeholders being
+      # substituted -- so it always runs.
+      - name: Verify the delete-guard still covers every protected resource
+        run: |
+          python3 scripts/assert-no-tenant-deletes.py --self-test
+          python3 scripts/assert-no-tenant-deletes.py --verify-coverage node_modules/@branchleft/ghost-platform-tenant/dist
+
+  deploy:
+    name: Deploy (pulumi up)
+    runs-on: ubuntu-latest
+    needs: [typecheck]
+
+    # `!= true`, not `== false` -- see the type-check job's placeholder-guard
+    # comment above for why an absent/null `is_template` must fail open into
+    # running, not skipping.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.repository.is_template != true
+
+    # Required reviewers and wait timers are public-repository-only for
+    # GitHub Free, Pro and Team alike, and a tenant repo is private by
+    # design -- so no rule attached here would gate anything. An environment
+    # carrying no protection rule does not pause a run and does not say so:
+    # read `protection_rules`, never the presence of this key.
+    environment: production
+
+    # Job-level permissions replace the workflow-level block entirely --
+    # every scope this job needs must be listed here.
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+
+    # `cancel-in-progress: false` deliberately -- cancelling an apply
+    # mid-flight leaves the stack locked and half-applied.
+    concurrency:
+      group: pulumi-deploy-blog
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Ahead of every other step -- a literal `blog` must never
+      # reach `pulumi preview` (it would select a stack that doesn't exist)
+      # let alone `pulumi up`, and this check needs neither npm ci's
+      # dependencies nor GCP credentials to run.
+      - name: Verify template placeholders are substituted
+        run: python3 scripts/assert-placeholders-substituted.py
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+          registry-url: https://npm.pkg.github.com
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA_EMAIL }}
+
+      - name: Install Pulumi CLI
+        uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
+
+      # An unset repo variable resolves to an empty string with no error, so
+      # `pulumi login gs://` would otherwise fail somewhere further downstream
+      # with a message about the backend rather than about the variable.
+      - name: Log in to the Pulumi state backend
+        env:
+          STATE_BUCKET: ${{ vars.PULUMI_STATE_BUCKET }}
+        run: |
+          if [ -z "$STATE_BUCKET" ]; then
+            echo "::error::the PULUMI_STATE_BUCKET repo variable is unset or empty"
+            exit 1
+          fi
+          pulumi login "gs://$STATE_BUCKET"
+
+      # The two mail credentials are not committed to Pulumi.blog.yaml: this is
+      # a public repo and it carries no live secret, KMS-wrapped or otherwise.
+      # They are held as Actions secrets and encrypted into this stack's config
+      # here, in the runner, before the program runs -- the encrypted values
+      # are written to the local config file only and are never committed.
+      # `config.requireSecret` reads them at `pulumi preview`, so this step
+      # must precede the preview step, not just the apply. The deploy SA
+      # already holds KMS encrypt via WIF, so `--secret` wraps them with the
+      # same key the rest of the config uses. Values flow through `env:`, never
+      # `${{ }}` in the run script, so the plaintext is not written into the
+      # workflow text; GitHub also masks registered secrets in the log.
+      - name: Inject deploy-time secrets into stack config
+        env:
+          MAIL_SMTP_PASSWORD: ${{ secrets.BLOG_MAIL_SMTP_PASSWORD }}
+          BULK_EMAIL_API_KEY: ${{ secrets.BLOG_BULK_EMAIL_API_KEY }}
+        run: |
+          if [ -z "$MAIL_SMTP_PASSWORD" ] || [ -z "$BULK_EMAIL_API_KEY" ]; then
+            echo "::error::BLOG_MAIL_SMTP_PASSWORD and BLOG_BULK_EMAIL_API_KEY must both be set as repository secrets before the first deploy"
+            exit 1
+          fi
+          pulumi config set --secret --stack blog blog-infra:mailSmtpPassword "$MAIL_SMTP_PASSWORD"
+          pulumi config set --secret --stack blog blog-infra:bulkEmailApiKey "$BULK_EMAIL_API_KEY"
+
+      - name: Preview the plan
+        run: pulumi preview --stack blog --json > preview.json
+
+      - name: Refuse to apply a plan that destroys tenant infrastructure
+        run: |
+          python3 scripts/assert-no-tenant-deletes.py --self-test
+          python3 scripts/assert-no-tenant-deletes.py --verify-coverage node_modules/@branchleft/ghost-platform-tenant/dist
+
+          if ! python3 scripts/assert-no-tenant-deletes.py preview.json; then
+            echo "--- full plan follows ---"
+            python3 -m json.tool preview.json
+            exit 1
+          fi
+
+      - name: Apply
+        run: pulumi up --stack blog --yes
+
+      - name: Write outcome to job summary
+        if: always()
+        # Bound rather than interpolated. `github.sha` is not attacker-shaped,
+        # but a `${{ }}` inside `run` is substituted before the shell parses
+        # the script, and that property is worth being able to state without
+        # exceptions.
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          {
+            echo '## Tenant stack deploy'
+            echo
+            echo "Commit: \`${COMMIT_SHA}\`"
+            echo
+            echo '### Plan this run applied'
+            echo
+            echo '```json'
+            # The preview plan holds resource URNs, step ops and this stack's
+            # config. This program does encrypt two config values as secrets
+            # (the mail and bulk-email credentials, injected above at deploy
+            # time), and Pulumi redacts secret values as `[secret]` in plan
+            # output, so publishing the plan here does not disclose them.
+            python3 -m json.tool preview.json 2>/dev/null \
+              || echo '(no plan captured -- the run failed before preview)'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
