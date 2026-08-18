@@ -1,5 +1,18 @@
-secretsprovider: gcpkms://projects/branchleft-prod/locations/europe-west1/keyRings/pulumi/cryptoKeys/pulumi-secrets
-encryptedkey: CiQAefexUsPIzrK1bHKPZoFM3T5V8i7VZ7qIxGtR28AgqdzR5/QSSQBxixxQlUsNOY296qmsztD1MQZ9z8MOw6zfkq1WcTSYX7PYG3kSBheh150KIxz1BLGJrlp8oxHaY2NZo7YTMPgYPjYfzJ3mrjo=
+# This stack is wrapped by Pulumi's passphrase provider, and neither the
+# provider line nor the `encryptionsalt` it writes is committed here. The salt
+# is an offline verifier for the passphrase -- whoever holds it can test
+# candidates at their own rate, with no state backend and no cloud IAM in the
+# loop -- and this repo is public. `branchLeft/standards` clause PUL-12 bans a
+# committed salt outright, in every mode.
+#
+# CI appends it on the runner from the `PULUMI_SALT_BLOG` repository secret,
+# before any pulumi command, and never commits the result. To apply by hand,
+# append your own held copy to the working file and do not commit it:
+#
+#     printf '\nencryptionsalt: %s\n' "$PULUMI_SALT_BLOG" >> Pulumi.blog.yaml
+#
+# Earlier revisions of this file carry a KMS `encryptedkey` rather than a salt,
+# so no passphrase verifier has ever been published here.
 config:
   gcp:project: branchleft-prod
   blog-infra:tenantName: blog

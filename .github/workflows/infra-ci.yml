@@ -100,6 +100,16 @@ jobs:
           python3 scripts/assert-no-tenant-deletes.py --self-test
           python3 scripts/assert-no-tenant-deletes.py --verify-coverage node_modules/@branchleft/ghost-platform-tenant/dist
 
+      # This repo is public and its stack config is committed, so a salt
+      # written back into it by an ordinary `pulumi config set` would be
+      # published. `--scan-tree` rather than a changed-file list: a salt that
+      # arrived on a branch nobody checked has to fail here rather than at
+      # publication. `deploy` needs this job, so a finding blocks the apply.
+      - name: Committed-secret guard
+        run: |
+          python3 scripts/assert-no-committed-pulumi-secrets.py --self-test
+          python3 scripts/assert-no-committed-pulumi-secrets.py --scan-tree .
+
   deploy:
     name: Deploy (pulumi up)
     runs-on: ubuntu-latest
@@ -179,21 +189,68 @@ jobs:
           fi
           pulumi login "gs://$STATE_BUCKET"
 
+      # The salt is not committed (see Pulumi.blog.yaml's header and
+      # branchLeft/standards PUL-12); it is appended to the working copy here,
+      # for this job only, and never committed back. Placed after login and
+      # before every command that reads or writes an encrypted value --
+      # `pulumi config set --secret` below is the first of them, not `up`.
+      #
+      # Read from `env:` rather than interpolated as `${{ }}` inside `run`: an
+      # expression in `run` is substituted before the shell parses the line, so
+      # a value carrying shell metacharacters would execute.
+      #
+      # Fails closed on an empty value. Without the check Pulumi reads a file
+      # whose salt line is blank, reports this stack's secrets as corrupt, and
+      # sends whoever debugs it at the passphrase rather than at a repository
+      # secret nobody set. This job is the tenant's production deploy, so
+      # failing here is what stands between an unset secret and an apply
+      # computed from config Pulumi could not read.
+      #
+      # Both values are bound step by step rather than on the job. The
+      # template this is copied from binds at job level, which puts the
+      # passphrase in front of every step including `npm ci` and its
+      # transitive postinstall scripts -- the same exposure both checkouts
+      # here set `persist-credentials: false` to avoid. Binding per step is a
+      # strict improvement on that, not a property peculiar to this repo.
+      - name: Restore the stack's encryption salt
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          PULUMI_SALT_BLOG: ${{ secrets.PULUMI_SALT_BLOG }}
+        run: |
+          if [ -z "$PULUMI_SALT_BLOG" ]; then
+            echo "::error::PULUMI_SALT_BLOG is empty or unset -- set the repository secret before deploying"
+            exit 1
+          fi
+          if [ -z "$PULUMI_CONFIG_PASSPHRASE" ]; then
+            echo "::error::PULUMI_CONFIG_PASSPHRASE is empty or unset. Pulumi treats an empty value as a valid passphrase rather than failing closed, so this refuses instead."
+            exit 1
+          fi
+          case "$PULUMI_SALT_BLOG" in
+            v1:*) ;;
+            *)
+              echo "::error::PULUMI_SALT_BLOG does not look like a Pulumi-generated salt (expected a 'v1:' prefix). The value reaches this secret by hand, so a truncated paste or one that kept its 'encryptionsalt: ' key prefix is the realistic failure -- and it would otherwise surface as a Pulumi decryption error rather than as a malformed secret."
+              exit 1
+              ;;
+          esac
+          printf '\nencryptionsalt: %s\n' "$PULUMI_SALT_BLOG" >> Pulumi.blog.yaml
+
       # The two mail credentials are not committed to Pulumi.blog.yaml: this is
-      # a public repo and it carries no live secret, KMS-wrapped or otherwise.
+      # a public repo and it carries no live secret, encrypted or otherwise.
       # They are held as Actions secrets and encrypted into this stack's config
       # here, in the runner, before the program runs -- the encrypted values
       # are written to the local config file only and are never committed.
       # `config.requireSecret` reads them at `pulumi preview`, so this step
-      # must precede the preview step, not just the apply. The deploy SA
-      # already holds KMS encrypt via WIF, so `--secret` wraps them with the
-      # same key the rest of the config uses. Values flow through `env:`, never
-      # `${{ }}` in the run script, so the plaintext is not written into the
-      # workflow text; GitHub also masks registered secrets in the log.
+      # must precede the preview step, not just the apply. `--secret` wraps
+      # them under the passphrase provider, using the salt restored above,
+      # which is why that step cannot be moved after this one. Values flow
+      # through `env:`, never `${{ }}` in the run script, so the plaintext is
+      # not written into the workflow text; GitHub also masks registered
+      # secrets in the log.
       - name: Inject deploy-time secrets into stack config
         env:
           MAIL_SMTP_PASSWORD: ${{ secrets.BLOG_MAIL_SMTP_PASSWORD }}
           BULK_EMAIL_API_KEY: ${{ secrets.BLOG_BULK_EMAIL_API_KEY }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
         run: |
           if [ -z "$MAIL_SMTP_PASSWORD" ] || [ -z "$BULK_EMAIL_API_KEY" ]; then
             echo "::error::BLOG_MAIL_SMTP_PASSWORD and BLOG_BULK_EMAIL_API_KEY must both be set as repository secrets before the first deploy"
@@ -203,6 +260,8 @@ jobs:
           pulumi config set --secret --stack blog blog-infra:bulkEmailApiKey "$BULK_EMAIL_API_KEY"
 
       - name: Preview the plan
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
         run: pulumi preview --stack blog --json > preview.json
 
       - name: Refuse to apply a plan that destroys tenant infrastructure
@@ -217,6 +276,8 @@ jobs:
           fi
 
       - name: Apply
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
         run: pulumi up --stack blog --yes
 
       - name: Write outcome to job summary
