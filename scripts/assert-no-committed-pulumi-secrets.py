@@ -41,6 +41,16 @@ one works under. Three shapes are therefore missed:
   which Pulumi accepts and `STACK_CONFIG` below does not match. The standards
   gate's own scope regex has the same shape, so widening one without the other
   would only move the gap.
+- a salt written inside a YAML comment. `is_commented` skips comment lines
+  deliberately: this repo's own stack config carries the re-append recipe as a
+  comment, and flagging it would make the guard cry wolf on the file it exists
+  to protect. Pulumi never writes a commented salt, and a commented one is
+  inert to Pulumi's parser too -- but it is still readable by anyone cloning;
+- a doubled byte order mark. The strip below removes one `U+FEFF`, so
+  `BOM + BOM + salt` still sits in front of the anchor;
+- a stack config whose filename differs in case (`pulumi.blog.yaml`).
+  `STACK_CONFIG` is case-sensitive while macOS's filesystem is not, so such a
+  file resolves for Pulumi and is skipped here.
 
 Pulumi emits none of them -- it writes block style, unquoted keys and `.yaml`
 throughout -- so each gap is between what Pulumi writes and what Pulumi would

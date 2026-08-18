@@ -206,11 +206,12 @@ jobs:
       # failing here is what stands between an unset secret and an apply
       # computed from config Pulumi could not read.
       #
-      # Both values are bound step by step rather than on the job, unlike
-      # branchLeft/website's otherwise identical pattern. `npm ci` runs
-      # earlier in this job, and a job-level binding would put the passphrase
-      # in front of every transitive postinstall script -- the same exposure
-      # both checkouts here set `persist-credentials: false` to avoid.
+      # Both values are bound step by step rather than on the job. The
+      # template this is copied from binds at job level, which puts the
+      # passphrase in front of every step including `npm ci` and its
+      # transitive postinstall scripts -- the same exposure both checkouts
+      # here set `persist-credentials: false` to avoid. Binding per step is a
+      # strict improvement on that, not a property peculiar to this repo.
       - name: Restore the stack's encryption salt
         env:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
@@ -224,6 +225,13 @@ jobs:
             echo "::error::PULUMI_CONFIG_PASSPHRASE is empty or unset. Pulumi treats an empty value as a valid passphrase rather than failing closed, so this refuses instead."
             exit 1
           fi
+          case "$PULUMI_SALT_BLOG" in
+            v1:*) ;;
+            *)
+              echo "::error::PULUMI_SALT_BLOG does not look like a Pulumi-generated salt (expected a 'v1:' prefix). The value reaches this secret by hand, so a truncated paste or one that kept its 'encryptionsalt: ' key prefix is the realistic failure -- and it would otherwise surface as a Pulumi decryption error rather than as a malformed secret."
+              exit 1
+              ;;
+          esac
           printf '\nencryptionsalt: %s\n' "$PULUMI_SALT_BLOG" >> Pulumi.blog.yaml
 
       # The two mail credentials are not committed to Pulumi.blog.yaml: this is
