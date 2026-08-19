@@ -40,6 +40,12 @@ the stack config at runtime, and the two under *Stack secrets* below.
   `blog-infra:mail*` and `blog-infra:bulkEmail*` values in `Pulumi.blog.yaml`;
   `GhostTenantMailArgs` and `GhostTenantBulkEmailArgs` in
   `@branchleft/ghost-platform-tenant` define what they become.
+- The standards gate (`.github/workflows/standards.yml`) runs in `warn` mode
+  (`.standards.mode`), not the ratchet's default `enforce`: at `enforce` it
+  fails on two pre-existing `tsconfig.json` findings (TS-1, TS-2) this repo
+  has not yet cleared. `warn` is `standards/docs/ratchet.md`'s prescribed
+  first-adoption state, not a permanent exemption — clearing the findings and
+  deleting the file is tracked as branchLeft/workspace#164.
 
 ## Stack secrets
 
