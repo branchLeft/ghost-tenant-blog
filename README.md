@@ -58,10 +58,21 @@ it can test candidates at their own rate, with no state backend and no cloud
 IAM in the loop to notice or rate-limit them. This repo is public, so that is
 `branchLeft/standards` clause PUL-12's exact prohibition, and it hard-fails in
 every mode with no exemption available. `scripts/assert-no-committed-pulumi-secrets.py`
-enforces it in the type-check job, which the deploy job needs — the check is
-mechanical because the salt is not added by hand: Pulumi writes it back into
-the file itself during an ordinary `pulumi config set`, and the diff then looks
-like exactly what the command was asked to do.
+is the mechanical check, because the salt is not added by hand: Pulumi writes
+it back into the file itself during an ordinary `pulumi config set`, and the
+diff then looks like exactly what the command was asked to do.
+
+```bash
+python3 scripts/assert-no-committed-pulumi-secrets.py --self-test
+python3 scripts/assert-no-committed-pulumi-secrets.py --scan-tree .
+python3 -m unittest discover -s scripts -p 'test_*.py'
+```
+
+**The `Committed-secret guard` job needs to be a required status check to
+block anything.** Outside a ruleset it reports red and the merge goes through
+anyway. It is deliberately not a job the deploy depends on: a salt already on
+`main` is already in every clone, so refusing to apply would take the site
+down without taking the salt back.
 
 This tenant's passphrase is its own, and is never `ghost-platform`'s. A repo
 holding a verifier for another repo's passphrase could attack it offline, so

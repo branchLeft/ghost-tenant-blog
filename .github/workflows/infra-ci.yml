@@ -3,7 +3,7 @@ name: Infra CI
 # Type-checks this repo's Pulumi program on every PR, and applies its one
 # stack on every push to main.
 #
-# Mirrors branchLeft/ghost-platform's infra/platform-ci.yml; the same five
+# Mirrors branchLeft/ghost-platform's infra/platform-ci.yml; the same six
 # guardrails apply here:
 #
 #   1. The apply runs only on push to main. Pull requests get type-check
@@ -21,6 +21,10 @@ name: Infra CI
 #      infrastructure (scripts/assert-no-tenant-deletes.py).
 #   5. The deploy job declares an `environment`. It is a deployment-history
 #      label here and does not gate -- see the `environment:` key below.
+#   6. This stack's encryption salt is restored from a repository secret at
+#      deploy time instead of being committed beside the ciphertexts it
+#      unwraps, and a separate job refuses a tree that carries one
+#      (scripts/assert-no-committed-pulumi-secrets.py).
 #
 # `npm ci` authenticates with the run's own GITHUB_TOKEN.
 # @branchleft/ghost-platform-tenant is a public package, and any authenticated
@@ -100,12 +104,33 @@ jobs:
           python3 scripts/assert-no-tenant-deletes.py --self-test
           python3 scripts/assert-no-tenant-deletes.py --verify-coverage node_modules/@branchleft/ghost-platform-tenant/dist
 
+  # Its own job, and deliberately not one `deploy` needs. What makes a
+  # committed salt dangerous is publication: one already on `main` is already
+  # in every clone, so refusing to apply does not take it back and would take
+  # the site down instead. The gate that matters is the merge, which means
+  # this check has to be in the branch ruleset to have any teeth -- see
+  # README.md.
+  secret-guard:
+    name: Committed-secret guard
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Stdlib unittest, no runner to install and nothing from npm -- this job
+      # holds no credential and needs none.
+      - name: Script unit tests
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
+
       # This repo is public and its stack config is committed, so a salt
       # written back into it by an ordinary `pulumi config set` would be
       # published. `--scan-tree` rather than a changed-file list: a salt that
       # arrived on a branch nobody checked has to fail here rather than at
-      # publication. `deploy` needs this job, so a finding blocks the apply.
-      - name: Committed-secret guard
+      # publication.
+      - name: Refuse a committed encryption salt
         run: |
           python3 scripts/assert-no-committed-pulumi-secrets.py --self-test
           python3 scripts/assert-no-committed-pulumi-secrets.py --scan-tree .
