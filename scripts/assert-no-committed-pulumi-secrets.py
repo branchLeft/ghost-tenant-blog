@@ -25,32 +25,38 @@ Usage:
     assert-no-committed-pulumi-secrets.py --scan-tree DIR  # find them itself
     assert-no-committed-pulumi-secrets.py --self-test
 
-`--scan-tree` exists so CI does not inherit pre-commit's `files:` pattern as
-its only definition of which files matter. A hook whose pattern silently stops
-matching is a hook that passes everything, and the pattern lives in a different
-file from this one.
+Exit status is three-valued, because a caller that branches on "is a salt
+committed here" has to be able to tell a no from an answer that was never
+obtained: 0 nothing committed, 1 at least one salt committed, 3 at least one
+named file could not be read. 3 wins over 1 when both happen -- a tree with an
+unread file in it has not been cleared.
+
+`--scan-tree` exists so a salt that arrived on a branch nobody checked fails
+here rather than at publication, rather than depending on the caller to name
+every file that might matter.
 
 **What it does not see.** It reads lines, not YAML: a real parser is not
-available here, the same stdlib-only constraint the other script beside this
-one works under. Three shapes are therefore missed:
+available here, the same stdlib-only constraint the other two scripts beside
+this one work under. These shapes are missed:
 
 - a key inside an inline flow mapping (`config: {encryptionsalt: x}`);
-- a quoted key (`"encryptionsalt": v1:...`), which every YAML parser reads as
-  the same key this one is looking for;
 - a stack config named `Pulumi.<stack>.yml` or `Pulumi.<stack>.json`, both of
   which Pulumi accepts and `STACK_CONFIG` below does not match. The standards
   gate's own scope regex has the same shape, so widening one without the other
-  would only move the gap.
+  would only move the gap;
 - a salt written inside a YAML comment. `is_commented` skips comment lines
-  deliberately: this repo's own stack config carries the re-append recipe as a
-  comment, and flagging it would make the guard cry wolf on the file it exists
-  to protect. Pulumi never writes a commented salt, and a commented one is
-  inert to Pulumi's parser too -- but it is still readable by anyone cloning;
+  deliberately: a stack config on this pattern carries the re-append recipe as
+  a comment, and flagging it would make the guard cry wolf on the file it
+  exists to protect. Pulumi never writes a commented salt, and a commented one
+  is inert to Pulumi's parser too -- but it is still readable by anyone
+  cloning;
 - a doubled byte order mark. The strip below removes one `U+FEFF`, so
   `BOM + BOM + salt` still sits in front of the anchor;
 - a stack config whose filename differs in case (`pulumi.blog.yaml`).
   `STACK_CONFIG` is case-sensitive while macOS's filesystem is not, so such a
-  file resolves for Pulumi and is skipped here.
+  file resolves for Pulumi and is skipped here;
+- a key whose quotes do not match (`"encryptionsalt': v1:...`). No YAML parser
+  accepts that either, so it is unreachable rather than merely unlikely.
 
 Pulumi emits none of them -- it writes block style, unquoted keys and `.yaml`
 throughout -- so each gap is between what Pulumi writes and what Pulumi would
@@ -74,7 +80,14 @@ import tempfile
 # half-done migration is crackable even where Pulumi's own parser would skip
 # the line. A guard that cries wolf is a guard people start passing
 # --no-verify to, so it matches nothing wider than that.
-FORBIDDEN_KEY = re.compile(r"^\s*(?:-\s+)?encryptionsalt\s*:", re.IGNORECASE)
+#
+# The quoted forms are matched too. Pulumi never writes one, but every YAML
+# parser reads `"encryptionsalt":` as the same key, so an unquoted-only matcher
+# clears a file that decrypts exactly as before.
+FORBIDDEN_KEY = re.compile(
+    r"""^\s*(?:-\s+)?(?:encryptionsalt|"encryptionsalt"|'encryptionsalt')\s*:""",
+    re.IGNORECASE,
+)
 
 # Written as an escape, never as the literal character, which is invisible in
 # every diff and editor that would have to review it.
@@ -90,7 +103,13 @@ BOM = "\ufeff"
 # never holds the salt, while `Pulumi.<stack>.yaml` does.
 STACK_CONFIG = re.compile(r"^Pulumi\.[^/]+\.yaml$")
 
-SKIP_DIRS = {".git", ".worktrees", "node_modules", "graphify-out", "dist", "vendor"}
+SKIP_DIRS = {".git", ".worktrees", "node_modules", "graphify-out", "dist", "bin", "vendor"}
+
+EXIT_SALT_FOUND = 1
+# Not 2: argparse exits 2 on a usage error, and a caller that has to tell
+# "could not read the file" from "could not understand the command line"
+# cannot be handed the same number for both.
+EXIT_UNREADABLE = 3
 
 
 def is_commented(line: str) -> bool:
@@ -132,27 +151,37 @@ def find_stack_configs(root: pathlib.Path) -> list[pathlib.Path]:
 
 
 def check(paths: list[pathlib.Path]) -> int:
-    failed = False
+    found_salt = False
+    unreadable = False
     for path in paths:
         try:
             text = path.read_text(encoding="utf-8")
-        except OSError as exc:
+        # UnicodeDecodeError is a ValueError, not an OSError, so it is named
+        # here rather than covered by it. Uncaught it would leave the
+        # interpreter exiting 1 on a traceback -- the same status as a
+        # finding, which is precisely the distinction callers need.
+        except (OSError, UnicodeDecodeError) as exc:
             # Not a pass. A file this cannot read is a file it cannot clear,
             # and reporting clean for it is the failure mode that matters.
             print(f"::error::cannot read {path}: {exc}", file=sys.stderr)
-            failed = True
+            unreadable = True
             continue
         for number, line in offending_lines(text):
             print(f"::error file={path},line={number}::{line}", file=sys.stderr)
-            failed = True
-    if failed:
+            found_salt = True
+    if found_salt:
         print(
             "\nRemove these before committing. The salt is supplied at deploy from a "
             "repository secret, and an operator applying by hand appends their own "
             "copy without committing it -- see README.md.",
             file=sys.stderr,
         )
-        return 1
+    # Reported ahead of a finding: a tree holding a file nobody could read has
+    # not been cleared, whatever else was found in the files that did read.
+    if unreadable:
+        return EXIT_UNREADABLE
+    if found_salt:
+        return EXIT_SALT_FOUND
     return 0
 
 
@@ -161,23 +190,31 @@ def check(paths: list[pathlib.Path]) -> int:
 #
 # Hermetic: fixtures in this file and a temp directory, nothing about the real
 # repository. It must pass in every state of the tree, so it can run on every
-# edit to this script.
+# edit to this script. test_assert_no_committed_pulumi_secrets.py beside it
+# covers the same matcher from the outside; this stays because CI invokes the
+# script itself, not the test runner, and a check that can only be verified by
+# a second tool is one that stops being verified.
 # --------------------------------------------------------------------------
 
 SALTED = "config:\n  gcp:project: p\nencryptionsalt: v1:AAA=:v1:BBB:CCC==\n"
 INDENTED_SALT = "config:\n  a: b\n  encryptionsalt: v1:AAA=\n"
 UPPERCASE_SALT = "config:\n  a: b\nEncryptionSalt: v1:AAA=\n"
 LIST_SALT = "config:\n  proj:list:\n    - encryptionsalt: AAAA\n"
-# The live shape of this repo's stack config: ciphertexts stay, the salt does
-# not. Both directions matter, so both are asserted on one fixture.
+DOUBLE_QUOTED_SALT = 'config:\n  a: b\n"encryptionsalt": v1:AAA=\n'
+SINGLE_QUOTED_SALT = "config:\n  a: b\n'encryptionsalt': v1:AAA=\n"
+MISMATCHED_QUOTE = "config:\n  a: b\n\"encryptionsalt': v1:AAA=\n"
+# The live shape of a generated tenant's stack config once it picks up a
+# `secure:` config value: the ciphertext stays, the salt never lands. Both
+# directions matter, so both are asserted on one fixture.
 SECURE_VALUE = "config:\n  proj:token:\n    secure: AAAABBBBCCCC\n"
 SECURE_VALUE_WITH_SALT = SECURE_VALUE + "encryptionsalt: v1:AAA=\n"
 COMMENTED = (
     "# `encryptionsalt` is deliberately absent from this committed file.\n"
-    "#     printf '\\nencryptionsalt: %s\\n' \"$SALT\" >> Pulumi.production.yaml\n"
+    "#     printf '\\nencryptionsalt: %s\\n' \"$SALT\" >> Pulumi.tenant.yaml\n"
     "config:\n  gcp:project: p\n"
 )
 SALT_SUFFIX_KEY = "config:\n  proj:noencryptionsalt: x\n  proj:encryptionsaltish: y\n"
+QUOTED_SUFFIX_KEY = 'config:\n  "proj:noencryptionsalt": x\n'
 CLEAN = "config:\n  gcp:project: branchleft-prod\n  proj:region: europe-west1\n"
 SALT_WITH_HASH = "encryptionsalt: v1:AAA=#notacomment\n"
 # A "UTF-8 with BOM" save of a salted file. The salt has to be on line 1 for
@@ -202,10 +239,14 @@ def _self_test() -> int:
         ("an indented salt is caught", INDENTED_SALT, [3]),
         ("a salt in any case is caught", UPPERCASE_SALT, [3]),
         ("a salt as a list item is caught", LIST_SALT, [3]),
+        ("a double-quoted key is caught", DOUBLE_QUOTED_SALT, [3]),
+        ("a single-quoted key is caught", SINGLE_QUOTED_SALT, [3]),
+        ("a mismatched-quote key is not YAML and is not flagged", MISMATCHED_QUOTE, []),
         ("a secure: value with no salt beside it is allowed", SECURE_VALUE, []),
         ("a salt beside a secure: value is still caught", SECURE_VALUE_WITH_SALT, [4]),
         ("commented-out mentions are ignored", COMMENTED, []),
         ("a key merely containing the word is not flagged", SALT_SUFFIX_KEY, []),
+        ("a quoted key merely containing the word is not flagged", QUOTED_SUFFIX_KEY, []),
         ("a clean stack config passes", CLEAN, []),
         ("a # inside a value does not make the line a comment", SALT_WITH_HASH, [1]),
         ("a BOM does not hide a salt on line 1", BOM_SALT, [1]),
@@ -223,10 +264,10 @@ def _self_test() -> int:
             failures += 1
 
     name_cases = [
-        ("Pulumi.production.yaml", True),
+        ("Pulumi.tenant.yaml", True),
         ("Pulumi.blog.yaml", True),
         ("Pulumi.yaml", False),
-        ("Pulumi.production.yaml.bak", False),
+        ("Pulumi.tenant.yaml.bak", False),
         ("something.yaml", False),
     ]
     for name, expected in name_cases:
@@ -239,16 +280,16 @@ def _self_test() -> int:
 
     with tempfile.TemporaryDirectory() as raw:
         root = pathlib.Path(raw)
-        (root / "Pulumi.production.yaml").write_text(CLEAN, encoding="utf-8")
-        (root / "infra").mkdir()
-        (root / "infra" / "Pulumi.production.yaml").write_text(SALTED, encoding="utf-8")
+        (root / "Pulumi.tenant.yaml").write_text(CLEAN, encoding="utf-8")
+        (root / "nested").mkdir()
+        (root / "nested" / "Pulumi.tenant.yaml").write_text(SALTED, encoding="utf-8")
         (root / "Pulumi.yaml").write_text("name: x\nruntime: nodejs\n", encoding="utf-8")
         skipped = root / "node_modules" / "pkg"
         skipped.mkdir(parents=True)
         (skipped / "Pulumi.fixture.yaml").write_text(SALTED, encoding="utf-8")
 
         found = {p.relative_to(root).as_posix() for p in find_stack_configs(root)}
-        expected_found = {"Pulumi.production.yaml", "infra/Pulumi.production.yaml"}
+        expected_found = {"Pulumi.tenant.yaml", "nested/Pulumi.tenant.yaml"}
         if found == expected_found:
             print(f"PASS: --scan-tree finds {sorted(found)} and skips Pulumi.yaml and node_modules")
         else:
@@ -256,27 +297,26 @@ def _self_test() -> int:
             failures += 1
 
         code, report = _quiet_check(find_stack_configs(root))
-        if code == 1 and "infra/Pulumi.production.yaml" in report.replace("\\", "/"):
+        if code == EXIT_SALT_FOUND and "nested/Pulumi.tenant.yaml" in report.replace("\\", "/"):
             print("PASS: a tree containing a salted stack config exits 1, naming the file")
         else:
             print(f"FAIL: salted tree -> exit {code}, report {report!r}", file=sys.stderr)
             failures += 1
 
-        # The shape this repo actually commits: ciphertexts, no salt.
-        (root / "infra" / "Pulumi.production.yaml").write_text(SECURE_VALUE, encoding="utf-8")
+        (root / "nested" / "Pulumi.tenant.yaml").write_text(CLEAN, encoding="utf-8")
         code, _ = _quiet_check(find_stack_configs(root))
         if code == 0:
-            print("PASS: a salt-free tree exits 0 with its ciphertexts intact")
+            print("PASS: a salt-free tree exits 0")
         else:
             print("FAIL: a salt-free tree did not exit 0", file=sys.stderr)
             failures += 1
 
         # The string fixtures above prove the matcher; this proves the read
         # path hands it a BOM to strip rather than swallowing one silently.
-        bom_file = root / "infra" / "Pulumi.bom.yaml"
+        bom_file = root / "nested" / "Pulumi.bom.yaml"
         bom_file.write_bytes(b"\xef\xbb\xbf" + BOM_SALT[len(BOM) :].encode("utf-8"))
         code, report = _quiet_check([bom_file])
-        if code == 1:
+        if code == EXIT_SALT_FOUND:
             print("PASS: a real BOM-prefixed file on disk fails")
         else:
             print(f"FAIL: BOM-prefixed file -> exit {code}, report {report!r}", file=sys.stderr)
@@ -284,10 +324,36 @@ def _self_test() -> int:
         bom_file.unlink()
 
         code, _ = _quiet_check([root / "Pulumi.missing.yaml"])
-        if code == 1:
-            print("PASS: an unreadable path fails rather than reporting clean")
+        if code == EXIT_UNREADABLE:
+            print("PASS: an unreadable path exits 3, not 0 and not a finding")
         else:
-            print("FAIL: an unreadable path did not fail", file=sys.stderr)
+            print(f"FAIL: an unreadable path -> exit {code} (expected {EXIT_UNREADABLE})", file=sys.stderr)
+            failures += 1
+
+        undecodable = root / "Pulumi.binary.yaml"
+        undecodable.write_bytes(b"config: x\n\xff\xfe not utf-8\n")
+        code, _ = _quiet_check([undecodable])
+        if code == EXIT_UNREADABLE:
+            print("PASS: a config that is not valid UTF-8 exits 3, not a traceback")
+        else:
+            print(f"FAIL: undecodable config -> exit {code} (expected {EXIT_UNREADABLE})", file=sys.stderr)
+            failures += 1
+        undecodable.unlink()
+
+    # A tree holding a project file and no stack config at all -- the shape of
+    # a freshly generated tenant repo before provisioning lands its stack
+    # config. `--scan-tree` must report clean, not complain that it was given
+    # nothing to do, or CI would fail before there is anything to check.
+    with tempfile.TemporaryDirectory() as raw:
+        root = pathlib.Path(raw)
+        (root / "Pulumi.yaml").write_text("name: x\nruntime: nodejs\n", encoding="utf-8")
+        buffer = io.StringIO()
+        with contextlib.redirect_stderr(buffer):
+            code = main(["--scan-tree", str(root)])
+        if code == 0:
+            print("PASS: --scan-tree over a tree with no stack config exits 0")
+        else:
+            print(f"FAIL: empty --scan-tree -> exit {code}, report {buffer.getvalue()!r}", file=sys.stderr)
             failures += 1
 
     if failures:
@@ -307,11 +373,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.self_test:
         return _self_test()
 
+    # Tested against what was asked for, not against what was found. A
+    # `--scan-tree` that matches nothing is a clean tree, and treating it as a
+    # usage error would turn the ordinary state of this repo into a CI failure.
+    if not args.paths and not args.scan_tree:
+        parser.error("pass at least one path, or --scan-tree DIR, or --self-test")
+
     targets = [pathlib.Path(p) for p in args.paths]
     if args.scan_tree:
         targets += find_stack_configs(pathlib.Path(args.scan_tree))
-    if not targets:
-        parser.error("pass at least one path, or --scan-tree DIR, or --self-test")
     return check(targets)
 
 
