@@ -18,3 +18,4 @@
 # CI refuses to deploy while this file carries no key line. It is committed
 # rather than held as a secret because a host public key is not one -- publishing
 # it is what pinning means.
+167.233.93.244 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMEnCgLmnyfTbqF7XUIXgCAQ3up5D6CyoYavliQQRwcz root@app1
