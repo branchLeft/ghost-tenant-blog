@@ -1,0 +1,15 @@
+/bin/
+/node_modules/
+Pulumi.*.yaml.bak
+/preview.json
+# The deploy job writes the slot key here on the runner. Ignored so a local
+# reproduction of that step cannot commit a private key.
+/deploy_key
+__pycache__/
+
+graphify-out/
+
+# This repo tracks package-lock.json and CI runs `npm ci`; a pnpm install
+# here is a mistake, and its lockfile must not get committed.
+pnpm-lock.yaml
+pnpm-workspace.yaml
