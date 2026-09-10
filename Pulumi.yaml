@@ -8,7 +8,7 @@
 # an S3 credential is not scoped per stack, so a tenant deployer that could
 # reach the estate's bucket could destroy the checkpoint the production hcloud
 # token lives in, and destroying a checkpoint needs no ability to decrypt it.
-name: __TENANT_PULUMI_PROJECT__
+name: blog-infra
 runtime: nodejs
 description: >-
   Per-tenant Pulumi stack for the branchLeft Ghost hosting platform, generated
