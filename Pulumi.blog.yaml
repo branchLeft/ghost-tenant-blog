@@ -1,0 +1,26 @@
+config:
+  blog-infra:slug: blog
+  blog-infra:siteUrl: https://blog.branchleft.co.uk
+  blog-infra:uid: "30001"
+  blog-infra:hostPort: "8101"
+  blog-infra:appHostPrivateIp: 10.20.1.100
+  blog-infra:imageRef: ghcr.io/branchleft/ghost-tenant@sha256:462b6d1e582f88364470ea086625e66bf11e0205b22e2395348b252e97b34301
+  blog-infra:databaseHost: 10.20.1.20
+  blog-infra:mediaEndpoint: https://hel1.your-objectstorage.com
+  blog-infra:mediaRegion: hel1
+  blog-infra:databasePassword:
+    secure: v1:QMwj+o81iPDUXnrK:/GzAUj/ENYURb6HUuAiX1vxXpWrzTYrt4r8MwPIfM0afqw0iRN+O25s+Krf/nz8ffGkaXTsH/hyHXgw=
+  blog-infra:mediaAccessKeyId:
+    secure: v1:jhLpXCDm+JUimiyF:uYSwt32E+UbG1ai6LwrrMR8LMrw1gWKYM2Ldy9P9Jh/MH0Xz
+  blog-infra:mediaSecretAccessKey:
+    secure: v1:AsZnNQBI9lC69jhi:thODm4yqVAGaCshz67qFnw28WAbNc3f7hP34mxluUgIydYk4W2Q0h23dSJCLGAx3Dt3FkA4+H0I=
+  blog-infra:mailPassword:
+    secure: v1:WMp/2b/7eQnNvAci:J5U/yxVKlhFMsuojMf2bg0XOlZPhzWMzlhvKDJJ9RkT8ItWta/hiH38ne6SuGWn3bgYbSRiNkss=
+  blog-infra:bulkEmailApiKey:
+    secure: v1:OD2te8XOisarUPYS:Y1Al8Eog3CZA2O8VNiLAd+UBW/MhX5xUZZrpQNixZ/j1ZK9v4GzyFKxcJnujLrGcakUVG68MIDv1XFc=
+  blog-infra:mailHost: mx1.branchleft.co.uk
+  blog-infra:mailPort: "587"
+  blog-infra:mailUser: blog@branchleft.co.uk
+  blog-infra:mailFrom: branchLeft blog <blog@branchleft.co.uk>
+  blog-infra:bulkEmailBaseUrl: https://mx1.branchleft.co.uk:8443
+  blog-infra:bulkEmailDomain: blog.branchleft.co.uk

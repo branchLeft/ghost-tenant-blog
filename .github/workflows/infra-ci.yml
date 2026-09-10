@@ -219,7 +219,7 @@ jobs:
     # `cancel-in-progress: false` deliberately -- cancelling mid-flight leaves
     # the stack locked, or the host between an image pin and its restart.
     concurrency:
-      group: deploy-__TENANT_NAME__
+      group: deploy-blog
       cancel-in-progress: false
 
     steps:
@@ -228,7 +228,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Ahead of every other step -- a literal `__TENANT_NAME__` must never
+      # Ahead of every other step -- a literal `blog` must never
       # reach `pulumi preview` (it would select a stack that does not exist) let
       # alone `pulumi up`, and this check needs no dependencies and no
       # credentials to run.
@@ -330,7 +330,7 @@ jobs:
         env:
           PULUMI_ENCRYPTION_SALT: ${{ secrets.PULUMI_ENCRYPTION_SALT }}
         run: |
-          config=Pulumi.__TENANT_NAME__.yaml
+          config=Pulumi.blog.yaml
           if [ ! -f "$config" ]; then
             echo "::error::$config is missing. The provisioning flow commits this stack's config, and without it there is nothing for this job to deploy."
             exit 1
@@ -386,7 +386,7 @@ jobs:
         # resource caps, an image digest bump) produces zero `GhostTenant`
         # steps, so without this flag the guard refuses those plans outright
         # once the pin reaches 3.0.0.
-        run: pulumi preview --stack __TENANT_NAME__ --json --show-sames > preview.json
+        run: pulumi preview --stack blog --json --show-sames > preview.json
 
       # `set -e` is load-bearing here, not boilerplate: the delete check is not
       # the last command in this script, and without errexit its non-zero exit
@@ -433,7 +433,7 @@ jobs:
           PULUMI_BACKEND_URL: ${{ vars.PULUMI_BACKEND_URL }}
           AWS_ACCESS_KEY_ID: ${{ secrets.HETZNER_S3_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.HETZNER_S3_SECRET_ACCESS_KEY }}
-        run: pulumi up --stack __TENANT_NAME__ --yes
+        run: pulumi up --stack blog --yes
 
       # Read from the applied stack rather than from the config file, so what is
       # deployed is what the apply above recorded -- a config value the apply
@@ -447,7 +447,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.HETZNER_S3_SECRET_ACCESS_KEY }}
         run: |
           set -euo pipefail
-          image=$(pulumi stack output image --stack __TENANT_NAME__)
+          image=$(pulumi stack output image --stack blog)
           # A failing command substitution inside a here-doc or an `echo` does
           # not trip errexit, so the value is captured and checked before it can
           # flow into an ssh invocation as an empty string.
