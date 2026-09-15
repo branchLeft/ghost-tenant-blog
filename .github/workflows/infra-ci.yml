@@ -76,6 +76,10 @@ jobs:
   typecheck:
     name: Type check
     runs-on: ubuntu-latest
+    # Observed 17-22s across the 5 successful runs this repo has (npm ci off
+    # the cache, then tsc). The bound is generous against a cold cache rather
+    # than tight against the sample.
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -163,6 +167,9 @@ jobs:
   secret-guard:
     name: Committed-secret guard
     runs-on: ubuntu-latest
+    # Observed 4-7s across 8 successful runs. Stdlib Python over a checkout,
+    # with nothing to install, so the runtime has no growth path.
+    timeout-minutes: 5
 
     steps:
       - name: Checkout
@@ -196,6 +203,12 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     needs: [typecheck]
+    # One successful run to sample (70s), so this is set generously rather than
+    # derived: it has to cover an apply that actually changes something and an
+    # ssh round trip to the app host, neither of which that single run
+    # exercised. Waiting on the environment's required reviewer is not counted
+    # against it -- a job pending approval has not started.
+    timeout-minutes: 20
 
     # `!= true`, not `== false` -- see the type-check job's placeholder-guard
     # comment above for why an absent/null `is_template` must fail open into
