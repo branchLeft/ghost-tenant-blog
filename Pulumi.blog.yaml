@@ -1,8 +1,8 @@
 config:
   blog-infra:slug: blog
   blog-infra:siteUrl: https://blog.branchleft.co.uk
-  blog-infra:uid: "30001"
-  blog-infra:hostPort: "8101"
+  blog-infra:uid: '30001'
+  blog-infra:hostPort: '8101'
   blog-infra:appHostPrivateIp: 10.20.1.100
   blog-infra:imageRef: ghcr.io/branchleft/ghost-tenant@sha256:462b6d1e582f88364470ea086625e66bf11e0205b22e2395348b252e97b34301
   blog-infra:databaseHost: 10.20.1.20
@@ -19,7 +19,7 @@ config:
   blog-infra:bulkEmailApiKey:
     secure: v1:OD2te8XOisarUPYS:Y1Al8Eog3CZA2O8VNiLAd+UBW/MhX5xUZZrpQNixZ/j1ZK9v4GzyFKxcJnujLrGcakUVG68MIDv1XFc=
   blog-infra:mailHost: mx1.branchleft.co.uk
-  blog-infra:mailPort: "587"
+  blog-infra:mailPort: '587'
   blog-infra:mailUser: blog@branchleft.co.uk
   blog-infra:mailFrom: branchLeft blog <blog@branchleft.co.uk>
   blog-infra:bulkEmailBaseUrl: https://mx1.branchleft.co.uk:8443
