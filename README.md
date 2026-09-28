@@ -81,7 +81,3 @@ anywhere on the path.
 
 Bootstrap record, the host-side steps and the teardown order:
 `RUNBOOK-bootstrap.md`.
-
-## License
-
-Source-available under the PolyForm Shield License 1.0.0. See [LICENSE](LICENSE).
