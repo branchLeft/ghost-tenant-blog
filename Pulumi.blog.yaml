@@ -15,9 +15,9 @@ config:
   blog-infra:mediaSecretAccessKey:
     secure: v1:AsZnNQBI9lC69jhi:thODm4yqVAGaCshz67qFnw28WAbNc3f7hP34mxluUgIydYk4W2Q0h23dSJCLGAx3Dt3FkA4+H0I=
   blog-infra:mailPassword:
-    secure: v1:WMp/2b/7eQnNvAci:J5U/yxVKlhFMsuojMf2bg0XOlZPhzWMzlhvKDJJ9RkT8ItWta/hiH38ne6SuGWn3bgYbSRiNkss=
+    secure: v1:XRe5w6A1CV1M7rCs:Jzu+tVIauG+XqO2JejU0+KrmPWgFBf28R8bxZVJYnxta5e7MbQM0YDYzrJ8JVo0tkBJeZ77CgJQ=
   blog-infra:bulkEmailApiKey:
-    secure: v1:OD2te8XOisarUPYS:Y1Al8Eog3CZA2O8VNiLAd+UBW/MhX5xUZZrpQNixZ/j1ZK9v4GzyFKxcJnujLrGcakUVG68MIDv1XFc=
+    secure: v1:21A4QQgbOLo4K6Dm:+Jik42kXCvIg0gqkXucluii7Ihf+6z0ZFDIajQ8hnO/zsuY1I2a4bDMFytVq+OZp3np05SweEdAkaOA=
   blog-infra:mailHost: mx1.branchleft.co.uk
   blog-infra:mailPort: '587'
   blog-infra:mailUser: blog@branchleft.co.uk
