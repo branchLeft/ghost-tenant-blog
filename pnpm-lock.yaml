@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@branchleft/ghost-platform-tenant':
-        specifier: 4.0.0
-        version: 4.0.0(typescript@5.9.3)
+        specifier: 5.0.0
+        version: 5.0.0(typescript@5.9.3)
       '@pulumi/pulumi':
         specifier: ^3.262.0
         version: 3.262.0(typescript@5.9.3)
@@ -33,8 +33,8 @@ importers:
 
 packages:
 
-  '@branchleft/ghost-platform-tenant@4.0.0':
-    resolution: {integrity: sha512-mm1JBdOKiyjMqkVI76+jXuS3gOAiUMHbsa3m/F57E//6HM2FvnfR/ha154SmWgoT774N4kEIcTmSuvsHjOKjcg==, tarball: https://npm.pkg.github.com/download/@branchleft/ghost-platform-tenant/4.0.0/99efcbff7a3450202412dc8a4f84a8d5ce4ff66e}
+  '@branchleft/ghost-platform-tenant@5.0.0':
+    resolution: {integrity: sha512-w23ZweNoHbyopYJ/lPkak9jFWQR978UYPGUrrHhNhwnw5BdxwIu8CzSfRfyUzUc4p+Bn+RnlEbXcTj1jt24OXw==, tarball: https://npm.pkg.github.com/download/@branchleft/ghost-platform-tenant/5.0.0/3fed66e18c891f38e6076add5bf38646ec310026}
 
   '@branchleft/prettier-config@0.3.1':
     resolution: {integrity: sha512-hbcpVMSNnnBdwwpjQtIlCqOYam0lihlGJ4et7flmDJCRb/DmndvQgF8dWosXoA2xrVHb14bzJ3GE8NvzpN9RJA==, tarball: https://npm.pkg.github.com/download/@branchleft/prettier-config/0.3.1/b60e80d1edecfd4ca143afa464f60e88ac9461d3}
@@ -897,7 +897,7 @@ packages:
 
 snapshots:
 
-  '@branchleft/ghost-platform-tenant@4.0.0(typescript@5.9.3)':
+  '@branchleft/ghost-platform-tenant@5.0.0(typescript@5.9.3)':
     dependencies:
       '@pulumi/pulumi': 3.262.0(typescript@5.9.3)
     transitivePeerDependencies:
