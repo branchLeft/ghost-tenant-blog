@@ -81,3 +81,51 @@ anywhere on the path.
 
 Bootstrap record, the host-side steps and the teardown order:
 `RUNBOOK-bootstrap.md`.
+
+## Repo variables and environment secrets
+
+CI reads two repository variables, `PULUMI_BACKEND_URL` (the full
+`s3://…?endpoint=…&s3ForcePathStyle=true&region=…` state backend URL, not a
+bucket name) and `APP_HOST_SSH_ADDRESS` (the app host's **public** address), and
+keeps every credential as an environment secret, never a repository secret. A
+repository secret is readable by any workflow run in the repo, including one
+added on a branch; an environment secret is readable only by a job declaring
+that environment.
+
+The `production` environment holds `PULUMI_CONFIG_PASSPHRASE`,
+`PULUMI_ENCRYPTION_SALT`, `HETZNER_S3_ACCESS_KEY_ID`,
+`HETZNER_S3_SECRET_ACCESS_KEY` and `APP_HOST_DEPLOY_KEY`, and is read by the
+deploy job alone.
+
+**A second environment, `production-plan`, for the plan job.** The `plan` job
+previews the stack on main before the deploy job waits for its approval, so
+whoever approves can read what the apply would do. A preview needs the same four
+secrets as the apply (`PULUMI_CONFIG_PASSPHRASE`, `PULUMI_ENCRYPTION_SALT` and
+the two `HETZNER_S3_*` keys), and no job outside the gated one may read them
+from `production`. So the same four secret names are also set, with the same
+values, on `production-plan`. That environment carries no reviewer (it would stop
+the job before the plan exists) and **must** have a deployment branch policy
+naming `main` alone; the plan job's first step refuses to run otherwise. It
+holds no `APP_HOST_DEPLOY_KEY`, and the job runs no `pulumi up`. It cannot run
+on a pull request, because a branch must not read these secrets: a pull request
+is checked by the type check, and the plan is made after the merge.
+
+**A push that changes nothing skips the deploy job, and says so.** The plan job
+publishes one value, `has_changes`, and the deploy job's `if:` skips it, and so
+its approval, only when that is exactly `false`. It is `false` only when two
+checks both find no change: the `plan-has-changes` action reads the Pulumi plan,
+and `scripts/image-changed.py` compares `imageRef` with the one the last
+successful run on main shipped. The second exists because the deploy job also
+puts the image on the host over SSH, which a plan of nothing but unchanged
+resources does not show. Anything either cannot establish asks for the approval
+as before. The first line of the plan job's summary says which way it went and
+why; `scripts/image-changed.md` has the rules.
+
+Set them in this order. Until the branch policy names `main` alone, any branch
+could read the four secrets, so the secrets come last.
+
+| Step | What                                        | Where                         | Set by                                    |
+| ---- | ------------------------------------------- | ----------------------------- | ----------------------------------------- |
+| 1    | create the `production-plan` environment, with no reviewer | repo settings  | the owner                                 |
+| 2    | deployment branch policy: `main` alone      | `production-plan` environment | the owner, in repo settings               |
+| 3    | the four state and passphrase secrets above | `production-plan` env secrets | the owner, copying the `production` values |
