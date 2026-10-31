@@ -212,7 +212,7 @@ jobs:
       # commit. It reads this workflow file only, holds no credential, and runs
       # on every pull request, so a broken gate fails before it can merge.
       - name: Check the no-op deploy gate's wiring
-        uses: branchLeft/github-workflows/.github/actions/check-apply-gate@2cfa57c06773bc70172022be12a85ce4ae5bcb6b # v1.0.10
+        uses: branchLeft/github-workflows/.github/actions/check-apply-gate@ea6de91ba90ed9a3a988ae8ffa0e9d70dd42f691 # v1.0.19
         with:
           workflow: .github/workflows/infra-ci.yml
           pairs: plan:deploy
@@ -446,7 +446,7 @@ jobs:
       - name: Decide whether the plan changes anything
         id: plan
         if: always()
-        uses: branchLeft/github-workflows/.github/actions/plan-has-changes@2cfa57c06773bc70172022be12a85ce4ae5bcb6b # v1.0.10
+        uses: branchLeft/github-workflows/.github/actions/plan-has-changes@ea6de91ba90ed9a3a988ae8ffa0e9d70dd42f691 # v1.0.19
         with:
           preview-json: preview.json
           plan-file: preview-plan.json
