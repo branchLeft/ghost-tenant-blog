@@ -4,7 +4,7 @@ config:
   blog-infra:uid: '30001'
   blog-infra:hostPort: '8101'
   blog-infra:appHostPrivateIp: 10.20.1.100
-  blog-infra:imageRef: ghcr.io/branchleft/ghost-tenant@sha256:53d73190888804176adc85538ec870cf2f1c2f591e4b99f9451b72b739229005
+  blog-infra:imageRef: ghcr.io/branchleft/ghost-tenant@sha256:a49a7d35feeb17eeb86a981dad2aa7c66a1e4bc1f8a07e4e4a1d4297a41c1cb5
   blog-infra:databaseHost: 10.20.1.20
   blog-infra:mediaEndpoint: https://hel1.your-objectstorage.com
   blog-infra:mediaRegion: hel1
