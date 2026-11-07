@@ -45,3 +45,13 @@ version already downloaded into it is hard-linked into a new worktree's
 `node_modules` rather than re-downloaded and copied. That is the point of the
 move — per-worktree `npm ci` was filling this Mac's disk with a full copy of
 `node_modules` per worktree.
+
+## Time-limited exceptions
+
+**Time-limited exception: `@branchleft/ghost-platform-tenant` pinned at `5.0.0`.**
+
+_Reach._ `package.json` pins `@branchleft/ghost-platform-tenant` at `5.0.0`, while the tenant template generates `7.0.0`. Recorded `2026-11-07`. This covers that one pin and nothing else.
+
+_What changes._ Nothing in code. The 7.0.0 migration touches the live blog and is planned as separate stories. This stack's `index.ts` and `config.ts` are hand-written for 5.0.0 and must not change in the PR that records this exception.
+
+_Ends._ On `2026-12-31` the exception lapses. Either the pin moves to the template's version, or the exception is renewed by a new dated PR. Refs `branchLeft/workspace#2035`.
