@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@branchleft/ghost-platform-tenant':
-        specifier: 5.0.0
-        version: 5.0.0(typescript@5.9.3)
+        specifier: 8.0.0
+        version: 8.0.0(typescript@5.9.3)
       '@pulumi/pulumi':
         specifier: ^3.262.0
         version: 3.262.0(typescript@5.9.3)
@@ -33,8 +33,12 @@ importers:
 
 packages:
 
-  '@branchleft/ghost-platform-tenant@5.0.0':
-    resolution: {integrity: sha512-w23ZweNoHbyopYJ/lPkak9jFWQR978UYPGUrrHhNhwnw5BdxwIu8CzSfRfyUzUc4p+Bn+RnlEbXcTj1jt24OXw==, tarball: https://npm.pkg.github.com/download/@branchleft/ghost-platform-tenant/5.0.0/3fed66e18c891f38e6076add5bf38646ec310026}
+  '@branchleft/ghost-platform-render-core@0.2.0':
+    resolution: {integrity: sha512-S/Wpqi6NXdNrAH92xbMU90bGOpNS5mlT7lQ0oxdELI0/9La+uuAMEsNIQXjYYabBYTiZGkiz59JJEFYhOVUS8g==, tarball: https://npm.pkg.github.com/download/@branchleft/ghost-platform-render-core/0.2.0/2595e635aa5e5d5fc18b65b520a2aa7ae7371ea9}
+    engines: {node: '>=20.19'}
+
+  '@branchleft/ghost-platform-tenant@8.0.0':
+    resolution: {integrity: sha512-xySRVO0fm97LsnJm8nU2QPddA3Rtn9QREQclatH6Rn4t9XZQqZKBwa+1wiBXZU0ay82D/eOZQjet4jJ1KkZxxg==, tarball: https://npm.pkg.github.com/download/@branchleft/ghost-platform-tenant/8.0.0/38c6e498b1d552aa8e10f65c4bec1f050720ed80}
 
   '@branchleft/prettier-config@0.3.1':
     resolution: {integrity: sha512-hbcpVMSNnnBdwwpjQtIlCqOYam0lihlGJ4et7flmDJCRb/DmndvQgF8dWosXoA2xrVHb14bzJ3GE8NvzpN9RJA==, tarball: https://npm.pkg.github.com/download/@branchleft/prettier-config/0.3.1/b60e80d1edecfd4ca143afa464f60e88ac9461d3}
@@ -222,12 +226,14 @@ packages:
   '@opentelemetry/sdk-trace-base@2.10.0':
     resolution: {integrity: sha512-GuYQQT7QD2EeO8lcZLRQzcbOyhqAzL+6WWTKTU9mSUBYBazkEDl+VrQcXQhbB08OWM9anD1aHleVadzulpOaUQ==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Use @opentelemetry/sdk-trace package
     peerDependencies:
       '@opentelemetry/api': '>=1.3.0 <1.10.0'
 
   '@opentelemetry/sdk-trace-node@2.10.0':
     resolution: {integrity: sha512-GZK/G6oZyBLGlH1pUgeDch7D91KoHd2uotUGIkWCPi9GI5T9X0p4L7nNAMDR1BQjkRYoDqo+ddfVx9t5Uhys+Q==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Use @opentelemetry/sdk-trace package
     peerDependencies:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
 
@@ -276,6 +282,18 @@ packages:
 
   '@pulumi/pulumi@3.262.0':
     resolution: {integrity: sha512-fsYlQ5sr0g5DCxW25LTLwBsSkgkTMxXDfKdZGGvb880zXEQZd509uUSgUTX608fca9FAxjfflPNGYKgB9ps3ow==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      ts-node: '>= 7.0.1 < 12'
+      typescript: '>= 3.8.3 < 7'
+    peerDependenciesMeta:
+      ts-node:
+        optional: true
+      typescript:
+        optional: true
+
+  '@pulumi/pulumi@3.274.1':
+    resolution: {integrity: sha512-L9WHM4W7y9BmGwTZ0n5yUEVo7zhb6BXocNFPv3VtwEH3DZUzJ6N+VTiLvo1HbSMnZJJVS0jFL4zMmOm80Lbzeg==}
     engines: {node: '>=22'}
     peerDependencies:
       ts-node: '>= 7.0.1 < 12'
@@ -525,6 +543,10 @@ packages:
 
   js-yaml@4.3.1:
     resolution: {integrity: sha512-CY6crGq313MX8GkwvB7tzgp99vjQxY1++5y10/BKN/GUfHqWaOGQMNZkBvqSzsZKWk/ijwHlWzzkLulsGHhjWQ==}
+    hasBin: true
+
+  js-yaml@4.3.2:
+    resolution: {integrity: sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==}
     hasBin: true
 
   json-parse-even-better-errors@5.0.0:
@@ -897,9 +919,12 @@ packages:
 
 snapshots:
 
-  '@branchleft/ghost-platform-tenant@5.0.0(typescript@5.9.3)':
+  '@branchleft/ghost-platform-render-core@0.2.0': {}
+
+  '@branchleft/ghost-platform-tenant@8.0.0(typescript@5.9.3)':
     dependencies:
-      '@pulumi/pulumi': 3.262.0(typescript@5.9.3)
+      '@branchleft/ghost-platform-render-core': 0.2.0
+      '@pulumi/pulumi': 3.274.1(typescript@5.9.3)
     transitivePeerDependencies:
       - supports-color
       - ts-node
@@ -1238,6 +1263,37 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@pulumi/pulumi@3.274.1(typescript@5.9.3)':
+    dependencies:
+      '@grpc/grpc-js': 1.14.4
+      '@logdna/tail-file': 2.2.0
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/exporter-trace-otlp-grpc': 0.220.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/exporter-zipkin': 2.10.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.220.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation-grpc': 0.220.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/resources': 2.10.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-trace-base': 2.10.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-trace-node': 2.10.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/semantic-conventions': 1.43.0
+      '@types/google-protobuf': 3.15.12
+      '@types/semver': 7.8.0
+      execa: 5.1.1
+      google-protobuf: 3.21.4
+      ini: 2.0.0
+      js-yaml: 4.3.2
+      minimist: 1.2.8
+      normalize-package-data: 6.0.2
+      require-from-string: 2.0.2
+      semver: 7.8.5
+      source-map-support: 0.5.21
+      upath: 1.2.0
+    optionalDependencies:
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - supports-color
+
   '@sigstore/bundle@4.0.0':
     dependencies:
       '@sigstore/protobuf-specs': 0.5.1
@@ -1458,6 +1514,10 @@ snapshots:
   isexe@4.0.0: {}
 
   js-yaml@4.3.1:
+    dependencies:
+      argparse: 2.0.1
+
+  js-yaml@4.3.2:
     dependencies:
       argparse: 2.0.1
 

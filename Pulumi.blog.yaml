@@ -3,24 +3,26 @@ config:
   blog-infra:siteUrl: https://blog.branchleft.co.uk
   blog-infra:uid: '30001'
   blog-infra:hostPort: '8101'
+  blog-infra:hostPortB: '8102'
+  blog-infra:healthPort: '8103'
   blog-infra:appHostPrivateIp: 10.20.1.100
   blog-infra:imageRef: ghcr.io/branchleft/ghost-tenant@sha256:53d73190888804176adc85538ec870cf2f1c2f591e4b99f9451b72b739229005
   blog-infra:databaseHost: 10.20.1.20
   blog-infra:mediaEndpoint: https://hel1.your-objectstorage.com
   blog-infra:mediaRegion: hel1
-  blog-infra:databasePassword:
-    secure: v1:QMwj+o81iPDUXnrK:/GzAUj/ENYURb6HUuAiX1vxXpWrzTYrt4r8MwPIfM0afqw0iRN+O25s+Krf/nz8ffGkaXTsH/hyHXgw=
-  blog-infra:mediaAccessKeyId:
-    secure: v1:jhLpXCDm+JUimiyF:uYSwt32E+UbG1ai6LwrrMR8LMrw1gWKYM2Ldy9P9Jh/MH0Xz
-  blog-infra:mediaSecretAccessKey:
-    secure: v1:AsZnNQBI9lC69jhi:thODm4yqVAGaCshz67qFnw28WAbNc3f7hP34mxluUgIydYk4W2Q0h23dSJCLGAx3Dt3FkA4+H0I=
-  blog-infra:mailPassword:
-    secure: v1:XRe5w6A1CV1M7rCs:Jzu+tVIauG+XqO2JejU0+KrmPWgFBf28R8bxZVJYnxta5e7MbQM0YDYzrJ8JVo0tkBJeZ77CgJQ=
-  blog-infra:bulkEmailApiKey:
-    secure: v1:21A4QQgbOLo4K6Dm:+Jik42kXCvIg0gqkXucluii7Ihf+6z0ZFDIajQ8hnO/zsuY1I2a4bDMFytVq+OZp3np05SweEdAkaOA=
+  blog-infra:zones:
+    demoZone: demo.trypublicpress.co.uk
+    platformZone: publicpress.co.uk
+    ownedDomains:
+      - demo.trypublicpress.co.uk
+      - publicpress.co.uk
+    demoMailDomain: demo.trypublicpress.co.uk
+  blog-infra:hostnameVerifiedAt: '2026-11-01T21:40:27.000Z'
+  blog-infra:backupEncryptionRecipient: BLOG_BACKUP_AGE_RECIPIENT_PLACEHOLDER
   blog-infra:mailHost: mx1.branchleft.co.uk
   blog-infra:mailPort: '587'
   blog-infra:mailUser: blog@branchleft.co.uk
-  blog-infra:mailFrom: branchLeft blog <blog@branchleft.co.uk>
-  blog-infra:bulkEmailBaseUrl: https://mx1.branchleft.co.uk:8443
   blog-infra:bulkEmailDomain: blog.branchleft.co.uk
+  blog-infra:mailDkimSelector: bl
+  blog-infra:mailCeiling: '100000'
+  blog-infra:mailEstateCeiling: '100000'
