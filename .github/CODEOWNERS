@@ -1,16 +1,63 @@
-* @branchLeft/branchleft-admin
-
-# The try-it-now programme's reviewer identity — branchLeft/workspace#1171.
-# CODEOWNERS takes the LAST matching pattern, so this line sets the owners for
-# the tree: the reviewer account, plus the admin team so Rob's own approval
-# path is unchanged.
+# Code owners for this repository.
 #
-# The shared line above stays. SYNC-1 is `suffix` for this file: GitHub applies
-# the LAST matching pattern, so the shared escape-hatch lines below have to stay
-# the final lines here, not merely present -- a repo may add its own patterns
-# above them but never after or between them.
-* @branchLeft/branchleft-admin
+# GitHub applies the LAST matching pattern to a path, and a line that names no
+# owner releases the path. There is deliberately no catch-all `*` line: a path
+# is owned only because a line below names it. Documents (every `.md` file),
+# editor and ignore files, the Node version pin and the lockfile have no line,
+# so a change to them needs no code-owner review.
+#
+# `scripts/codeowners_owned.py` answers "is this path owned" for a fixed table
+# of sample paths, one per kept class and one per released class, and its test
+# runs in the secret-free job. Edit this file and that table together.
 
+# Pulumi project and stack config. The encrypted config and the image pin sit
+# in the same file, so a pin change cannot be released without it.
+Pulumi.yaml                @branchLeft/branchleft-admin
+Pulumi.*.yaml              @branchLeft/branchleft-admin
+
+# The Pulumi program and what it is built with. `pulumi preview` runs these
+# with the stack passphrase in the environment, and this is the code that would
+# create a billed resource.
+*.ts                       @branchLeft/branchleft-admin
+*.tsx                      @branchLeft/branchleft-admin
+*.mts                      @branchLeft/branchleft-admin
+*.cts                      @branchLeft/branchleft-admin
+tsconfig.json              @branchLeft/branchleft-admin
+
+# Install-time inputs. The plan and deploy jobs run `pnpm install` with the
+# passphrase, the state keys and the deploy key in reach, `main` here picks the
+# program Pulumi runs, and `dependencies` pins the component that creates the
+# billed resources. Only the lockfile is released. A dependency bump that
+# touches package.json therefore still comes to the owner until the merge route
+# can tell a version-only change apart.
+package.json               @branchLeft/branchleft-admin
+.npmrc                     @branchLeft/branchleft-admin
+pnpm-workspace.yaml        @branchLeft/branchleft-admin
+
+# What the deploy's ssh trusts, and what runs on a contributor's machine.
+known_hosts                @branchLeft/branchleft-admin
+.pre-commit-config.yaml    @branchLeft/branchleft-admin
+
+# Executable code, at any depth, so a new script never arrives unowned. The
+# checks and gate tests are here: jobs that hold secrets run the scripts, and
+# their output decides whether a deploy is approved.
+*.py                       @branchLeft/branchleft-admin
+*.sh                       @branchLeft/branchleft-admin
+*.js                       @branchLeft/branchleft-admin
+*.mjs                      @branchLeft/branchleft-admin
+*.cjs                      @branchLeft/branchleft-admin
+/scripts/testdata/         @branchLeft/branchleft-admin
+
+# The rules and the owner's words.
+CLAUDE.md                  @branchLeft/branchleft-admin
+AUTHORISATIONS.md          @branchLeft/branchleft-admin
+
+# Legal text.
+LICENSE                    @branchLeft/branchleft-admin
+
+# The shared set below is the standards escape hatches, copied byte for byte,
+# and must stay the final lines: nothing after or between them. The workflows,
+# dependabot.yml and this file are under /.github/.
 /.standardsignore        @branchLeft/branchleft-admin
 /.standards.mode         @branchLeft/branchleft-admin
 /.docs-lint*             @branchLeft/branchleft-admin
