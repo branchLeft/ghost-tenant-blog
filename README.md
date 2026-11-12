@@ -45,7 +45,7 @@ anywhere on the path.
   `main` applies the `blog` stack and then deploys its pinned image.
   Both jobs refuse to run while a template placeholder survives, and the deploy
   job's delete-guard preflight aborts any plan carrying a `delete` or `replace`
-  step. Its other half does not currently fire — see the `uid` bullet below.
+  step.
 - Changes are pull requests against `Pulumi.blog.yaml` and
   `index.ts`. Secret config is encrypted with this repo's own passphrase — set
   it with `pulumi config set --secret` from a checkout, with
