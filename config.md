@@ -34,8 +34,7 @@ the host was provisioned with, and a drift between them is a diff.
 The image this tenant runs, always digest-pinned.
 
 Config rather than a repository variable so that changing which image a
-tenant runs is a reviewed diff on a branch, the way it was when the GCP-era
-stack passed a reference to Cloud Run. Nothing in the rendered Compose file
+tenant runs is a reviewed diff on a branch. Nothing in the rendered Compose file
 carries it — `branchleft-deploy` writes it to
 `/etc/branchleft/<slug>.image.env` on the host — so this stack exports it for
 the deploy job to read rather than handing it to the component.
