@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import * as pulumi from '@pulumi/pulumi';
 
 const config = new pulumi.Config();
@@ -25,9 +27,11 @@ export const appHostPrivateIp = config.require('appHostPrivateIp');
 /** This tenant's host-side port, distinct per tenant on that host. */
 export const hostPort = config.requireNumber('hostPort');
 
-/** The image this tenant runs, always digest-pinned — config rather than a
- * repository variable, so which image runs is a reviewed diff. See config.md. */
-export const imageRef = config.require('imageRef');
+/** The image this tenant runs, always digest-pinned: the one line of
+ * `image-pin.txt`, a file that holds no ciphertext, so a digest bump is a
+ * reviewed diff that does not touch the encrypted stack config. See config.md.
+ * Read here, as a file next to this one, and not from Pulumi config. */
+export const imageRef = fs.readFileSync(path.join(__dirname, 'image-pin.txt'), 'utf8').trim();
 
 /** `db1`'s private address. */
 export const databaseHost = config.require('databaseHost');

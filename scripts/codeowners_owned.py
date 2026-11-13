@@ -49,7 +49,7 @@ SAMPLES: tuple[tuple[str, bool, str], ...] = (
     ("scripts/new-check.sh", True, "new script arrives owned"),
     (".pnpmfile.cjs", True, "install hook"),
     # Config and secrets.
-    ("Pulumi.blog.yaml", True, "stack config and ciphertext"),
+    ("Pulumi.blog.yaml", True, "stack config and ciphertext, no image pin"),
     ("Pulumi.yaml", True, "project file"),
     (".npmrc", True, "registry config"),
     ("known_hosts", True, "what the deploy ssh trusts"),
@@ -72,7 +72,8 @@ SAMPLES: tuple[tuple[str, bool, str], ...] = (
     ("tsconfig.json", True, "loader config"),
     # Legal text.
     ("LICENSE", True, "legal text"),
-    # Released: documents, editor and ignore files, the version pin, the lockfile.
+    # Released: documents, editor and ignore files, the version pin, the lockfile,
+    # the image pin.
     ("README.md", False, "document"),
     ("RUNBOOK-bootstrap.md", False, "document"),
     ("docs/new-page.md", False, "new document"),
@@ -80,6 +81,7 @@ SAMPLES: tuple[tuple[str, bool, str], ...] = (
     ("scripts/codeowners_owned.md", False, "script document"),
     (".nvmrc", False, "version pin"),
     ("pnpm-lock.yaml", False, "lockfile"),
+    ("image-pin.txt", False, "image pin, no ciphertext"),
     (".editorconfig", False, "editor file"),
     (".gitignore", False, "ignore file"),
     (".prettierignore", False, "ignore file"),
