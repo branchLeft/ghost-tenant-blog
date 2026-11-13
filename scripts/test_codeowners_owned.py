@@ -71,6 +71,10 @@ class Sabotage(unittest.TestCase):
         wrong = co.mismatches(co.parse(kept))
         self.assertTrue(any(" package.json " in line for line in wrong))
 
+    def test_owning_the_image_pin_is_caught(self) -> None:
+        wrong = co.mismatches(co.parse(LIVE.replace("known_hosts ", "image-pin.txt   @branchLeft/branchleft-admin\nknown_hosts ", 1)))
+        self.assertTrue(any("image-pin.txt" in line for line in wrong))
+
     def test_a_release_line_after_the_shared_set_is_caught(self) -> None:
         wrong = co.mismatches(co.parse(LIVE + "\n/.github/notes.md\n"))
         self.assertTrue(any(".github/notes.md" in line for line in wrong))

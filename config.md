@@ -33,12 +33,22 @@ the host was provisioned with, and a drift between them is a diff.
 
 The image this tenant runs, always digest-pinned.
 
-Config rather than a repository variable so that changing which image a
-tenant runs is a reviewed diff on a branch, the way it was when the GCP-era
-stack passed a reference to Cloud Run. Nothing in the rendered Compose file
-carries it — `branchleft-deploy` writes it to
-`/etc/branchleft/<slug>.image.env` on the host — so this stack exports it for
-the deploy job to read rather than handing it to the component.
+Not Pulumi config: it is the one line of `image-pin.txt` at the repository
+root, a file that holds no ciphertext. It sits outside `Pulumi.<stack>.yaml` so
+that a digest bump does not have to pass through the file that carries the
+encrypted secrets, and `.github/CODEOWNERS` therefore names no owner for it.
+It is still a file in this repo rather than a repository variable, so changing
+which image a tenant runs is a reviewed diff on a branch.
+
+The file is exactly one line, the reference, with at most the newline that ends
+it: no comment, no key, no quotes, no blank line. `config.ts` reads it, the
+digest-pin check in `index.ts` refuses anything but a digest, the plan job's
+`scripts/image-changed.py` compares it with the last deployed one, and the
+deploy job reads the same file for the SSH step. Each refuses any other shape.
+
+Nothing in the rendered Compose file carries it — `branchleft-deploy` writes it
+to `/etc/branchleft/<slug>.image.env` on the host — so this stack exports it for
+the record rather than handing it to the component.
 
 ## `mediaEndpoint` / `mediaRegion`
 

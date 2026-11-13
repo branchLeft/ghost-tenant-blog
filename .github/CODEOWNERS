@@ -10,8 +10,9 @@
 # of sample paths, one per kept class and one per released class, and its test
 # runs in the secret-free job. Edit this file and that table together.
 
-# Pulumi project and stack config. The encrypted config and the image pin sit
-# in the same file, so a pin change cannot be released without it.
+# Pulumi project and stack config, which carries the encrypted config. The
+# image pin is not here: `image-pin.txt` holds it alone, with no ciphertext, and
+# has no line below, so a digest bump needs no code-owner review.
 Pulumi.yaml                @branchLeft/branchleft-admin
 Pulumi.*.yaml              @branchLeft/branchleft-admin
 
