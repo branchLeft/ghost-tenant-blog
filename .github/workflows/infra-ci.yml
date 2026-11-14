@@ -743,8 +743,8 @@ jobs:
       # self-test's. That shape is exactly how a guard reports green over a plan
       # that would have deleted a tenant's content volume.
       #
-      # The full plan is NOT printed on failure, unlike the GCP-era version of
-      # this step. This stack's outputs include `secretsEnvFile`, a Pulumi
+      # The full plan is NOT printed on failure. This stack's outputs include
+      # `secretsEnvFile`, a Pulumi
       # secret: Pulumi renders it as `[secret]` in `--json`, and the difference
       # between relying on that and not printing the plan at all is one upstream
       # change. `pulumi preview --diff` from a checkout is the debugging path.
@@ -867,9 +867,9 @@ jobs:
         if: always()
         run: rm -f deploy_key
 
-      # Deliberately does not publish the preview plan, unlike the GCP-era
-      # version of this workflow: this stack carries a secret output, and a job
-      # summary on a public tenant repo is visible to anyone.
+      # Deliberately does not publish the preview plan: this stack carries a
+      # secret output, and a job summary on a public tenant repo is visible to
+      # anyone.
       - name: Write outcome to job summary
         if: always()
         # Bound rather than interpolated. Neither value is attacker-shaped, but a
