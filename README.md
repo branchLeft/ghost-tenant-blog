@@ -32,7 +32,7 @@ between them they are the runtime-isolation posture, and a stack that quietly
 loses one line of it still starts, still serves, and has dropped a boundary.
 
 **The only thing CI puts on the host is an image reference.** The deploy job
-pipes `imageRef` to `branchleft-deploy` over this repo's own slot key, which
+pipes the image reference in `image-pin.txt` to `branchleft-deploy` over this repo's own slot key, which
 writes `/etc/branchleft/blog.image.env` and restarts
 `branchleft-compose@blog`. That key's `authorized_keys` entry carries
 a forced command naming this stack, written by root — so it cannot address any
@@ -51,7 +51,8 @@ anywhere on the path.
   it with `pulumi config set --secret` from a checkout, with
   `PULUMI_CONFIG_PASSPHRASE` exported locally, never by pasting plaintext into
   the file.
-- **Changing the image** is a one-line change to `imageRef`, digest-pinned. A
+- **Changing the image** is a one-line change to `image-pin.txt`, digest-pinned.
+  That file holds no ciphertext, so it is not owned in `.github/CODEOWNERS`. A
   tag is refused at preview: a stack deployed by tag has no answer to "what is
   running", and a restart months later can silently change it.
 - **Changing `uid` or `appHostPrivateIp` is refused at preview**, and both
@@ -114,7 +115,7 @@ is checked by the type check, and the plan is made after the merge.
 publishes one value, `has_changes`, and the deploy job's `if:` skips it, and so
 its approval, only when that is exactly `false`. It is `false` only when two
 checks both find no change: the `plan-has-changes` action reads the Pulumi plan,
-and `scripts/image-changed.py` compares `imageRef` with the one the last
+and `scripts/image-changed.py` compares `image-pin.txt` with the one the last
 successful run on main shipped. The second exists because the deploy job also
 puts the image on the host over SSH, which a plan of nothing but unchanged
 resources does not show. Anything either cannot establish asks for the approval
