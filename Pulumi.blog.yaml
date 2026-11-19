@@ -21,6 +21,7 @@ config:
   blog-infra:mailUser: blog@branchleft.co.uk
   blog-infra:bulkEmailDomain: blog.branchleft.co.uk
   blog-infra:mailDkimSelector: bl
+  blog-infra:backupEncryptionRecipient: 'age1jsfycrct3fg7mmxtp857k0jfwandwtq7ccnl2fjaceje8yja5daq49alsp'
   blog-infra:hostnameVerifiedAt: '2026-11-01T21:40:27.000Z'
   blog-infra:mailCeiling: '100000'
   blog-infra:mailEstateCeiling: '100000'
