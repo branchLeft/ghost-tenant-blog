@@ -17,3 +17,7 @@ vendor/
 README.md
 README.tenant.md
 CLAUDE.md
+
+# Handlebars theme templates. Prettier has no stable Handlebars output (it drops the
+# final newline that end-of-file-fixer adds back), so the pair would loop forever.
+theme/**/*.hbs
