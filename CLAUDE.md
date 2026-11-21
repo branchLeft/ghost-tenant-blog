@@ -10,10 +10,12 @@ has the config tables and the placeholder table; in a generated repo,
 
 **This stack creates nothing.** The component declares no cloud resources —
 every durable thing a tenant uses is shared and already exists. What it renders
-is configuration: a Compose file and a secrets file, both of which an operator
-places on the app host by hand. No automated path may write either; between them
-they are the runtime-isolation posture, and a stack that quietly loses one line
-of it still starts and still serves.
+is configuration: a Compose file an operator places on the app host by hand, and
+the key names of a secrets file the host fills. **This stack holds no secret
+value** (component 8.0.0): never add a `secure:` entry or a `requireSecret` read.
+No automated path may write either file; between them they are the
+runtime-isolation posture, and a stack that quietly loses one line of it still
+starts and still serves.
 
 **The only thing CI puts on a host is an image digest**, piped to
 `branchleft-deploy` over this repo's own slot key. That key's `authorized_keys`
@@ -31,6 +33,13 @@ deploy job appends it to the working copy.
 repository secret — a repository secret is readable by any workflow run,
 including one from a branch. That scoping is the replacement for the
 provider-enforced repository pin Workload Identity Federation used to give.
+
+**The plan is made before the approval, on a second environment.** The `plan`
+job previews on main ahead of the deploy job's gate and prints the plan, so an
+approver reads it first. It holds the state credentials, passphrase and salt as
+environment secrets on `production-plan`, limited to the branch `main` (it
+refuses to run otherwise), and never the host key or a `pulumi up`. The deploy
+job still previews and checks again after approval. See `README.md`.
 
 **A hostname plus a slug is that tenant's identity.** Never carry it into a
 public repo, an issue, or a PR description outside this repo.
