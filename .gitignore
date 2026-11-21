@@ -12,3 +12,8 @@ __pycache__/
 # an npm install here is a mistake, and its lockfile must not get committed --
 # ignored so a stray `npm install` can't silently reintroduce it.
 package-lock.json
+
+# Built theme package (theme/build_theme.py).
+/theme/dist/
+.mypy_cache/
+.ruff_cache/

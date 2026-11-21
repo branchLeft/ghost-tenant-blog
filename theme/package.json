@@ -1,0 +1,10 @@
+{
+  "name": "branchleft-blog-theme",
+  "description": "branchLeft blog theme for Ghost 6, styled from the brand tokens in branchLeft/components.",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "ghost": ">=6.0.0"
+  }
+}

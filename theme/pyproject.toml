@@ -1,0 +1,16 @@
+[project]
+name = "branchleft-blog-theme-tools"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["build_theme.py", "test_build_theme.py"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

@@ -1,0 +1,20 @@
+<html lang='{{@site.locale}}'>
+  <head>
+    <meta charset='utf-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1' />
+    <title>{{meta_title}}</title>
+    {{ghost_head}}
+    <link rel='stylesheet' href='{{asset "css/tokens.css"}}' />
+    <link rel='stylesheet' href='{{asset "css/screen.css"}}' />
+  </head>
+  <body class='{{body_class}}'>
+    <header class='site-header'>
+      <a class='site-title' href='{{@site.url}}'>{{@site.title}}</a>
+    </header>
+    <main class='site-main'>
+      {{{body}}}
+    </main>
+    <footer class='site-footer'>FOOTER TEXT PLACEHOLDER</footer>
+    {{ghost_foot}}
+  </body>
+</html>

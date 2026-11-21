@@ -1,0 +1,79 @@
+/* branchLeft blog theme. Every colour, font, size and space comes from tokens.css. */
+
+body {
+  margin: 0;
+  background: var(--bl-color-bg);
+  color: var(--bl-color-fg);
+  font-family: var(--bl-font-sans);
+  font-size: var(--bl-text-body);
+  line-height: var(--bl-leading-body);
+}
+
+a {
+  color: var(--bl-color-active);
+}
+
+a:hover,
+a:focus-visible {
+  color: var(--bl-color-fg);
+}
+
+.site-header {
+  padding: var(--bl-space-md) var(--bl-space-lg);
+  border-bottom: 1px solid var(--bl-color-hairline);
+}
+
+.site-title {
+  font-family: var(--bl-font-wordmark);
+  font-size: var(--bl-text-h4);
+  color: var(--bl-color-fg);
+  text-decoration: none;
+}
+
+.site-main {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: var(--bl-space-xl) var(--bl-space-lg);
+}
+
+.post-card {
+  padding: var(--bl-space-lg) 0;
+  border-bottom: 1px solid var(--bl-color-hairline);
+}
+
+.post-card-title,
+.post-title {
+  font-family: var(--bl-font-display);
+  font-size: var(--bl-text-h1);
+  line-height: var(--bl-leading-heading);
+}
+
+.post-card-excerpt {
+  color: var(--bl-color-muted);
+}
+
+.post-feature-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.post-content h2 {
+  font-family: var(--bl-font-display);
+  font-size: var(--bl-text-h2);
+  line-height: var(--bl-leading-heading);
+}
+
+.post-content h3 {
+  font-family: var(--bl-font-display);
+  font-size: var(--bl-text-h3);
+  line-height: var(--bl-leading-heading);
+}
+
+.site-footer {
+  padding: var(--bl-space-lg);
+  border-top: 1px solid var(--bl-color-hairline);
+  color: var(--bl-color-muted);
+  font-size: var(--bl-text-small);
+  text-align: center;
+}
