@@ -118,6 +118,7 @@ const descriptor = {
 const tenant = new GhostTenant(slug, {
   descriptor,
   zones,
+  widgets: 'own-origin',
   ...(databaseMaxUserConnections === undefined
     ? {}
     : { maxUserConnections: databaseMaxUserConnections }),

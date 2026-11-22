@@ -12,3 +12,5 @@
 # was simply missed.
 allowBuilds:
   protobufjs: false
+minimumReleaseAgeExclude:
+  - '@branchleft/ghost-platform-tenant@9.0.0'
