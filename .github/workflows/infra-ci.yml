@@ -182,8 +182,7 @@ jobs:
   # matters. This check has to be in the branch ruleset to have any teeth -- see
   # README.md. `plan` and `deploy` both list `secret-guard` in `needs`, so a
   # committed salt stops both before any credential is used. In a generated
-  # repo with no branch ruleset, that job graph is the only enforcement
-  # (see PR #39).
+  # repo with no branch ruleset, that job graph is the only enforcement.
   secret-guard:
     name: Committed-secret guard
     runs-on: ubuntu-latest
