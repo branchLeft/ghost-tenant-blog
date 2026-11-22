@@ -1,0 +1,10 @@
+{{!< default}}
+<section class='post-feed'>
+  {{#foreach posts}}
+    <article class='post-card'>
+      <h2 class='post-card-title'><a href='{{url}}'>{{title}}</a></h2>
+      <p class='post-card-excerpt'>{{excerpt}}</p>
+    </article>
+  {{/foreach}}
+</section>
+{{pagination}}

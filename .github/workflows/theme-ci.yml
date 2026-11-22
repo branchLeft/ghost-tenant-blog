@@ -1,0 +1,52 @@
+name: theme-ci
+
+on:
+  pull_request:
+    paths:
+      - 'theme/**'
+      - '.github/workflows/theme-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'theme/**'
+      - '.github/workflows/theme-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  theme:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Python tools
+        run: |
+          python3 -m venv "$RUNNER_TEMP/tools"
+          "$RUNNER_TEMP/tools/bin/pip" install mypy==1.18.2 ruff==0.13.3
+          echo "$RUNNER_TEMP/tools/bin" >> "$GITHUB_PATH"
+
+      - name: Type check and lint
+        working-directory: theme
+        run: |
+          mypy --config-file pyproject.toml
+          ruff check --config pyproject.toml .
+          ruff format --check --config pyproject.toml .
+
+      - name: Unit tests
+        run: python3 -m unittest discover -s theme -p 'test_*.py' -v
+
+      - name: Package the theme
+        run: python3 theme/build_theme.py
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Validate with gscan
+        run: npx --yes gscan@6.7.0 --fatal theme
