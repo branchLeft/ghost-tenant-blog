@@ -40,6 +40,6 @@ checks them, and they stay last.
 
 `test_codeowners_owned.py` checks the live file against the table, checks that
 the old file (kept in `testdata/codeowners/before.txt`) disagrees with the table
-on exactly the released classes, checks that removing the line for scripts or
-for `package.json` turns the check red, and covers the matcher. It reads files
+on exactly the released classes, checks that removing the line for the gate scripts or
+for a gate test turns the check red, and covers the matcher. It reads files
 and runs nothing else, so it runs in the job that holds no secret.

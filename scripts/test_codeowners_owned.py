@@ -60,20 +60,23 @@ class OldFile(unittest.TestCase):
 
 
 class Sabotage(unittest.TestCase):
-    def test_removing_the_python_line_leaves_scripts_unowned(self) -> None:
-        kept = "\n".join(line for line in LIVE.splitlines() if not line.startswith("*.py"))
+    def test_removing_the_gate_script_line_leaves_the_gates_unowned(self) -> None:
+        kept = "\n".join(line for line in LIVE.splitlines() if not line.startswith("/scripts/assert-*.py"))
         wrong = co.mismatches(co.parse(kept))
-        self.assertTrue(any("scripts/image-changed.py" in line for line in wrong))
-        self.assertTrue(any("scripts/test_image_changed.py" in line for line in wrong))
+        self.assertTrue(any("scripts/assert-no-committed-pulumi-secrets.py" in line for line in wrong))
 
-    def test_removing_the_package_json_line_leaves_it_unowned(self) -> None:
-        kept = "\n".join(line for line in LIVE.splitlines() if not line.startswith("package.json"))
+    def test_removing_the_gate_test_line_leaves_it_unowned(self) -> None:
+        kept = "\n".join(line for line in LIVE.splitlines() if not line.startswith("/scripts/test_secret_checks.py"))
         wrong = co.mismatches(co.parse(kept))
-        self.assertTrue(any(" package.json " in line for line in wrong))
+        self.assertTrue(any("scripts/test_secret_checks.py" in line for line in wrong))
 
     def test_owning_the_image_pin_is_caught(self) -> None:
-        wrong = co.mismatches(co.parse(LIVE.replace("known_hosts ", "image-pin.txt   @branchLeft/branchleft-admin\nknown_hosts ", 1)))
+        wrong = co.mismatches(co.parse(LIVE.replace("/README.md ", "image-pin.txt   @branchLeft/branchleft-admin\n/README.md ", 1)))
         self.assertTrue(any("image-pin.txt" in line for line in wrong))
+
+    def test_owning_the_pulumi_program_is_caught(self) -> None:
+        wrong = co.mismatches(co.parse(LIVE.replace("/README.md ", "*.ts   @branchLeft/branchleft-admin\n/README.md ", 1)))
+        self.assertTrue(any("index.ts" in line for line in wrong))
 
     def test_a_release_line_after_the_shared_set_is_caught(self) -> None:
         wrong = co.mismatches(co.parse(LIVE + "\n/.github/notes.md\n"))
